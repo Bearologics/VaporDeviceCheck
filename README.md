@@ -1,3 +1,66 @@
-# VaporDeviceCheck
+# 📱 VaporDeviceCheck
 
-A description of this package.
+A Vapor 4 Middleware implementing the Apple DeviceCheck API.
+
+## 🛠 Using the Middleware
+
+When configuring your Vapor `Application` make sure to set up the JWT credentials to authenticate against the DeviceCheck API, in this example we're using environment variables which are prefixed `APPLE_JWT_` and install the Middleware:
+
+```swift
+guard let jwtPrivateKeyString = Environment.get("APPLE_JWT_PRIVATE_KEY") else {
+	throw ConfigurationError.noAppleJwtPrivateKey
+}
+    
+guard let jwtKidString = Environment.get("APPLE_JWT_KID") else {
+	throw ConfigurationError.noAppleJwtKid
+}
+    
+guard let jwkIssString = Environment.get("APPLE_JWT_ISS") else {
+	throw ConfigurationError.noAppleJwtIss
+}
+    
+let jwkKid = JWKIdentifier(string: jwtKidString)
+    
+app.jwt.signers.use(
+	.es256(key: try! .private(pem: jwtPrivateKeyString.data(using: .utf8)!)),
+	kid: jwkKid,
+	isDefault: false
+)
+
+app.middleware.use(DeviceCheck(jwkKid: jwkKid, jwkIss: jwkIssString, excludes: [["health"]]))
+```
+
+That's basically it, from now on, every request that'll pass the Middleware will require a valid `X-Apple-Device-Token` header to be set, otherwise it will be rejected.
+
+## 🔑 Setting up your App / Retrieving a DeviceCheck Token
+
+You'll need to import Apple's `DeviceCheck` Framework to retrieve a token for your device.
+
+```swift
+import DeviceCheck
+
+DCDevice.current.generateToken { data, error in 
+	guard 
+		error == nil,
+		let data = data
+	else {
+		// handle error
+		return
+	}
+	
+	let xAppleDeviceCheckToken = data.base64EncodedString()
+}
+
+```
+
+The `xAppleDeviceCheckToken` base64 string will be your `X-Apple-Device-Token` header value.
+
+## 📗 How it works
+
+Under the hood the Middleware will call `api(.development).devicecheck.apple.com`, authenticate using the JWT provided and check if the value of the `X-Apple-Device-Toke` header is a valid DeviceCheck Token.
+
+The Middleware will first try to validate the token against Apple's production environment, if this fails it will try the sandbox environment, if both fail it will bail out with an appropriate error response.
+
+## 👩‍💼 License
+
+[See here.](LICENSE.md)
