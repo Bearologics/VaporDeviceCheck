@@ -48,7 +48,7 @@ final class VaporDeviceCheckTests: XCTestCase {
         
         try app.test(.GET, "check") { res in
             XCTAssertEqual(res.status, .internalServerError)
-            XCTAssertEqual(res.body.string, "{\"error\":true,\"reason\":\"NoAppleDeviceTokenError.NoAppleDeviceTokenError: No X-Apple-Device-Token header provided.\"}")
+            XCTAssertTrue(res.body.string.contains("NoAppleDeviceTokenError.NoAppleDeviceTokenError: No X-Apple-Device-Token header provided."))
         }
     }
 
