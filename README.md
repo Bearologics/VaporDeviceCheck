@@ -4,7 +4,13 @@ A Vapor 4 Middleware implementing the Apple DeviceCheck API.
 
 ## 🛠 Using the Middleware
 
-When configuring your Vapor `Application` make sure to set up the JWT credentials to authenticate against the DeviceCheck API, in this example we're using environment variables which are prefixed `APPLE_JWT_` and install the Middleware:
+First add the package to your `Package.swift`:
+
+```swift
+.package(url: "https://github.com/Bearologics/VaporDeviceCheck", from: "1.0.1")
+```
+
+Then configure your Vapor `Application` and make sure to set up the JWT credentials to authenticate against the DeviceCheck API, in this example we're using environment variables which are prefixed `APPLE_JWT_` and install the Middleware:
 
 ```swift
 guard let jwtPrivateKeyString = Environment.get("APPLE_JWT_PRIVATE_KEY") else {
