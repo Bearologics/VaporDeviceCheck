@@ -23,6 +23,12 @@ public struct DeviceCheck: Middleware {
     let jwkIss: String
     let excludes: [[PathComponent]]?
     
+    public init(jwkKid: JWKIdentifier, jwkIss: String, excludes: [[PathComponent]]? = nil) {
+        self.jwkKid = jwkKid
+        self.jwkIss = jwkIss
+        self.excludes = excludes
+    }
+    
     public func respond(to request: Request, chainingTo next: Responder) -> EventLoopFuture<Response> {
         requestDeviceCheck(on: request, chainingTo: next, isSandbox: false)
     }
