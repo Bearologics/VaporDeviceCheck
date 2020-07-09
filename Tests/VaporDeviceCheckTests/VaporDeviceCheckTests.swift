@@ -54,5 +54,6 @@ final class VaporDeviceCheckTests: XCTestCase {
 
     static var allTests = [
         ("testExcludesRoutes", testExcludesRoutes),
+        ("testBailsOutIfNoDeviceTokenIsProvided", testBailsOutIfNoDeviceTokenIsProvided)
     ]
 }
