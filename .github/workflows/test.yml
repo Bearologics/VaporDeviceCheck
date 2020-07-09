@@ -1,0 +1,14 @@
+name: test
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+jobs:
+  test:
+    container:
+      image: vapor/swift:5.2
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: swift test
