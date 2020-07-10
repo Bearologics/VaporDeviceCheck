@@ -1,18 +1,20 @@
+import JWT
 import XCTVapor
 @testable import VaporDeviceCheck
-import JWT
 
 final class VaporDeviceCheckTests: XCTestCase {
-    var sut: DeviceCheck!
+    var app: Application!
+    
+    override func setUp() {
+        app = Application(.testing)
+    }
     
     override func tearDown() {
-        sut = nil
+        app.shutdown()
+        app = nil
     }
     
     func testExcludesRoutes() throws {
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        
         app.middleware.use(
             DeviceCheck(
                 jwkKid: JWKIdentifier(string: "123456"),
@@ -31,9 +33,6 @@ final class VaporDeviceCheckTests: XCTestCase {
     }
     
     func testBailsOutIfNoDeviceTokenIsProvided() throws {
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        
         app.middleware.use(
             DeviceCheck(
                 jwkKid: JWKIdentifier(string: "123456"),
