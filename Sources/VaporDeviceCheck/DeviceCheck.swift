@@ -19,14 +19,12 @@ public struct NoAppleDeviceTokenError: DebuggableError {
 }
 
 public struct DeviceCheck: Middleware {
-    let jwkKid: JWKIdentifier
-    let jwkIss: String
     let excludes: [[PathComponent]]?
+    let client: DeviceCheckClient
     
-    public init(jwkKid: JWKIdentifier, jwkIss: String, excludes: [[PathComponent]]? = nil) {
-        self.jwkKid = jwkKid
-        self.jwkIss = jwkIss
+    public init(jwkKid: JWKIdentifier, jwkIss: String, excludes: [[PathComponent]]? = nil, client: DeviceCheckClient? = nil) {
         self.excludes = excludes
+        self.client = client ?? AppleDeviceCheckClient(jwkKid: jwkKid, jwkIss: jwkIss)
     }
     
     public func respond(to request: Request, chainingTo next: Responder) -> EventLoopFuture<Response> {
@@ -42,37 +40,17 @@ public struct DeviceCheck: Middleware {
             return request.eventLoop.makeFailedFuture(NoAppleDeviceTokenError())
         }
                 
-        return request.client.post(URI(string: "https://\(isSandbox ? "api.development" : "api").devicecheck.apple.com/v1/validate_device_token")) {
-            $0.headers.add(name: .authorization, value: "Bearer \(try signedJwt(for: request))")
-            return try $0.content.encode(DeviceCheckRequest(deviceToken: xAppleDeviceToken))
+        return client.request(request, xAppleDeviceToken: xAppleDeviceToken, isSandbox: isSandbox)
+            .flatMap { res in
+                if res.status == .ok {
+                    return next.respond(to: request)
+                }
+                
+                if isSandbox {
+                    return request.eventLoop.makeFailedFuture(Abort(.unauthorized))
+                }
+                
+                return self.requestDeviceCheck(on: request, chainingTo: next, isSandbox: true)
         }
-        .flatMap { res in
-            if res.status == .ok {
-                return next.respond(to: request)
-            }
-            
-            if isSandbox {
-                return request.eventLoop.makeFailedFuture(Abort(.unauthorized))
-            }
-            
-            return self.requestDeviceCheck(on: request, chainingTo: next, isSandbox: true)
-        }
-    }
-        
-    private func signedJwt(for request: Request) throws -> String {
-        try request.jwt.sign(DeviceCheckJWT(iss: jwkIss), kid: jwkKid)
-    }
-}
-
-private extension HTTPHeaders.Name {
-    static let xAppleDeviceToken = HTTPHeaders.Name("X-Apple-Device-Token")
-}
-
-private struct DeviceCheckJWT: JWTPayload {
-    let iss: String
-    let iat: Int = Int(Date().timeIntervalSince1970)
-    
-    func verify(using signer: JWTSigner) throws {
-        //no-op
     }
 }

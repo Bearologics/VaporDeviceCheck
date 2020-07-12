@@ -50,9 +50,49 @@ final class VaporDeviceCheckTests: XCTestCase {
             XCTAssertTrue(res.body.string.contains("NoAppleDeviceTokenError.NoAppleDeviceTokenError: No X-Apple-Device-Token header provided."))
         }
     }
+    
+    func testAcceptsValidDeviceTokenHeader() throws {
+        app.middleware.use(
+            DeviceCheck(
+                jwkKid: JWKIdentifier(string: "123456"),
+                jwkIss: "Test",
+                excludes: [["health"]],
+                client: FakeDeviceCheckClient(isSuccessful: true)
+            )
+        )
+        
+        app.get("check") { req in
+            return "OK"
+        }
+        
+        try app.test(.GET, "check", headers: ["X-Apple-Device-Token": "123"]) { res in
+            XCTAssertEqual(res.status, .ok)
+        }
+    }
+    
+    func testRejectsInvalidDeviceTokenHeader() throws {
+        app.middleware.use(
+            DeviceCheck(
+                jwkKid: JWKIdentifier(string: "123456"),
+                jwkIss: "Test",
+                excludes: [["health"]],
+                client: FakeDeviceCheckClient(isSuccessful: false)
+            )
+        )
+        
+        app.get("check") { req in
+            return "OK"
+        }
+        
+        try app.test(.GET, "check", headers: ["X-Apple-Device-Token": "123"]) { res in
+            XCTAssertEqual(res.status, .unauthorized)
+        }
+    }
 
     static var allTests = [
         ("testExcludesRoutes", testExcludesRoutes),
-        ("testBailsOutIfNoDeviceTokenIsProvided", testBailsOutIfNoDeviceTokenIsProvided)
+        ("testBailsOutIfNoDeviceTokenIsProvided", testBailsOutIfNoDeviceTokenIsProvided),
+        ("testAcceptsValidDeviceTokenHeader", testAcceptsValidDeviceTokenHeader),
+        ("testRejectsInvalidDeviceTokenHeader", testRejectsInvalidDeviceTokenHeader)
     ]
 }
