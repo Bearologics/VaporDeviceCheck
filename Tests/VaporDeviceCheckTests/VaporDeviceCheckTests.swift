@@ -57,7 +57,7 @@ final class VaporDeviceCheckTests: XCTestCase {
                 jwkKid: JWKIdentifier(string: "123456"),
                 jwkIss: "Test",
                 excludes: [["health"]],
-                client: FakeDeviceCheckClient(isSuccessful: true)
+                client: FakeDeviceCheckClient()
             )
         )
         
@@ -65,7 +65,7 @@ final class VaporDeviceCheckTests: XCTestCase {
             return "OkeyDokey"
         }
         
-        try app.test(.GET, "check", headers: ["X-Apple-Device-Token": "123"]) { res in
+        try app.test(.GET, "check", headers: ["X-Apple-Device-Token": "C0RR3CT"]) { res in
             XCTAssertEqual(res.status, .ok)
             XCTAssertEqual(res.body.string, "OkeyDokey")
         }
@@ -77,7 +77,7 @@ final class VaporDeviceCheckTests: XCTestCase {
                 jwkKid: JWKIdentifier(string: "123456"),
                 jwkIss: "Test",
                 excludes: [["health"]],
-                client: FakeDeviceCheckClient(isSuccessful: false)
+                client: FakeDeviceCheckClient()
             )
         )
         
@@ -85,7 +85,7 @@ final class VaporDeviceCheckTests: XCTestCase {
             return "OK"
         }
         
-        try app.test(.GET, "check", headers: ["X-Apple-Device-Token": "123"]) { res in
+        try app.test(.GET, "check", headers: ["X-Apple-Device-Token": "1NV4L1D"]) { res in
             XCTAssertEqual(res.status, .unauthorized)
             XCTAssertNotEqual(res.body.string, "OK")
         }

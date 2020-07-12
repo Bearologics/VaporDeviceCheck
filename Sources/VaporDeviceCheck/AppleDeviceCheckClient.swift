@@ -5,10 +5,10 @@ public struct AppleDeviceCheckClient: DeviceCheckClient {
     public let jwkKid: JWKIdentifier
     public let jwkIss: String
     
-    public func request(_ request: Request, xAppleDeviceToken: String, isSandbox: Bool) -> EventLoopFuture<ClientResponse> {
+    public func request(_ request: Request, deviceToken: String, isSandbox: Bool) -> EventLoopFuture<ClientResponse> {
         request.client.post(URI(string: "https://\(isSandbox ? "api.development" : "api").devicecheck.apple.com/v1/validate_device_token")) {
             $0.headers.add(name: .authorization, value: "Bearer \(try signedJwt(for: request))")
-            return try $0.content.encode(DeviceCheckRequest(deviceToken: xAppleDeviceToken))
+            return try $0.content.encode(DeviceCheckRequest(deviceToken: deviceToken))
         }
     }
     

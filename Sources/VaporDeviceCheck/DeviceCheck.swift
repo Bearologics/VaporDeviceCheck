@@ -40,7 +40,7 @@ public struct DeviceCheck: Middleware {
             return request.eventLoop.makeFailedFuture(NoAppleDeviceTokenError())
         }
                 
-        return client.request(request, xAppleDeviceToken: xAppleDeviceToken, isSandbox: isSandbox)
+        return client.request(request, deviceToken: xAppleDeviceToken, isSandbox: isSandbox)
             .flatMap { res in
                 if res.status == .ok {
                     return next.respond(to: request)
