@@ -32,7 +32,7 @@ final class VaporDeviceCheckTests: XCTestCase {
         }
     }
     
-    func testBailsOutIfNoDeviceTokenIsProvided() throws {
+    func testNoDeviceTokenIsProvided_andBailsOut() throws {
         app.middleware.use(
             DeviceCheck(
                 jwkKid: JWKIdentifier(string: "123456"),
@@ -51,7 +51,7 @@ final class VaporDeviceCheckTests: XCTestCase {
         }
     }
     
-    func testAcceptsValidDeviceTokenHeader() throws {
+    func testAcceptsValidDeviceTokenHeader_andPerformsNextRequest() throws {
         app.middleware.use(
             DeviceCheck(
                 jwkKid: JWKIdentifier(string: "123456"),
@@ -62,15 +62,16 @@ final class VaporDeviceCheckTests: XCTestCase {
         )
         
         app.get("check") { req in
-            return "OK"
+            return "OkeyDokey"
         }
         
         try app.test(.GET, "check", headers: ["X-Apple-Device-Token": "123"]) { res in
             XCTAssertEqual(res.status, .ok)
+            XCTAssertEqual(res.body.string, "OkeyDokey")
         }
     }
     
-    func testRejectsInvalidDeviceTokenHeader() throws {
+    func testRejectsInvalidDeviceTokenHeader_andBailsOut() throws {
         app.middleware.use(
             DeviceCheck(
                 jwkKid: JWKIdentifier(string: "123456"),
@@ -86,13 +87,14 @@ final class VaporDeviceCheckTests: XCTestCase {
         
         try app.test(.GET, "check", headers: ["X-Apple-Device-Token": "123"]) { res in
             XCTAssertEqual(res.status, .unauthorized)
+            XCTAssertNotEqual(res.body.string, "OK")
         }
     }
 
     static var allTests = [
         ("testExcludesRoutes", testExcludesRoutes),
-        ("testBailsOutIfNoDeviceTokenIsProvided", testBailsOutIfNoDeviceTokenIsProvided),
-        ("testAcceptsValidDeviceTokenHeader", testAcceptsValidDeviceTokenHeader),
-        ("testRejectsInvalidDeviceTokenHeader", testRejectsInvalidDeviceTokenHeader)
+        ("testBailsOutIfNoDeviceTokenIsProvided", testNoDeviceTokenIsProvided_andBailsOut),
+        ("testAcceptsValidDeviceTokenHeader", testAcceptsValidDeviceTokenHeader_andPerformsNextRequest),
+        ("testRejectsInvalidDeviceTokenHeader", testRejectsInvalidDeviceTokenHeader_andBailsOut)
     ]
 }
