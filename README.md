@@ -63,7 +63,7 @@ The `xAppleDeviceCheckToken` base64 string will be your `X-Apple-Device-Token` h
 
 ## 📗 How it works
 
-Under the hood the Middleware will call `api(.development).devicecheck.apple.com`, authenticate using the JWT provided and check if the value of the `X-Apple-Device-Toke` header is a valid DeviceCheck Token.
+Under the hood the Middleware will call `api(.development).devicecheck.apple.com`, authenticate using the JWT provided and check if the value of the `X-Apple-Device-Token` header is a valid DeviceCheck Token.
 
 The Middleware will first try to validate the token against Apple's production environment, if this fails it will try the sandbox environment, if both fail it will bail out with an appropriate error response.
 
