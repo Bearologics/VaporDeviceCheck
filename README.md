@@ -13,27 +13,40 @@ First add the package to your `Package.swift`:
 Then configure your Vapor `Application` and make sure to set up the JWT credentials to authenticate against the DeviceCheck API, in this example we're using environment variables which are prefixed `APPLE_JWT_` and install the Middleware:
 
 ```swift
-guard let jwtPrivateKeyString = Environment.get("APPLE_JWT_PRIVATE_KEY") else {
-	throw ConfigurationError.noAppleJwtPrivateKey
-}
-    
-guard let jwtKidString = Environment.get("APPLE_JWT_KID") else {
-	throw ConfigurationError.noAppleJwtKid
-}
-    
-guard let jwkIssString = Environment.get("APPLE_JWT_ISS") else {
-	throw ConfigurationError.noAppleJwtIss
-}
-    
-let jwkKid = JWKIdentifier(string: jwtKidString)
-    
-app.jwt.signers.use(
-	.es256(key: try! .private(pem: jwtPrivateKeyString.data(using: .utf8)!)),
-	kid: jwkKid,
-	isDefault: false
-)
+import VaporDeviceCheck
 
-app.middleware.use(DeviceCheck(jwkKid: jwkKid, jwkIss: jwkIssString, excludes: [["health"]]))
+enum ConfigurationError: Error {
+    case noAppleJwtPrivateKey, noAppleJwtKid, noAppleJwtIss
+}
+
+// configures your application
+public func configure(_ app: Application) throws {
+    guard let jwtPrivateKeyString = Environment.get("APPLE_JWT_PRIVATE_KEY") else {
+        throw ConfigurationError.noAppleJwtPrivateKey
+    }
+        
+    guard let jwtKidString = Environment.get("APPLE_JWT_KID") else {
+        throw ConfigurationError.noAppleJwtKid
+    }
+        
+    guard let jwkIssString = Environment.get("APPLE_JWT_ISS") else {
+        throw ConfigurationError.noAppleJwtIss
+    }
+        
+    let jwkKid = JWKIdentifier(string: jwtKidString)
+        
+    app.jwt.signers.use(
+        .es256(key: try! .private(pem: jwtPrivateKeyString.data(using: .utf8)!)),
+        kid: jwkKid,
+        isDefault: false
+    )
+
+    // install middleware
+    app.middleware.use(DeviceCheck(jwkKid: jwkKid, jwkIss: jwkIssString, excludes: [["health"]]))
+
+    // register routes
+    try routes(app)
+}
 ```
 
 That's basically it, from now on, every request that'll pass the Middleware will require a valid `X-Apple-Device-Token` header to be set, otherwise it will be rejected.
